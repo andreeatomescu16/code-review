@@ -38,7 +38,7 @@ jobs:
         id: cache-llama3
         uses: actions/cache@v3
         with:
-          path: /root/.ollama/models/llama3
+          path: ~/.ollama/models/llama3
           key: llama3-model-cache
 
       - name: Pull Llama3 Model
