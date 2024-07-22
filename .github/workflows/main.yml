@@ -21,12 +21,24 @@ jobs:
           name: ollama-artifact
           path: .
 
+      - name: Verify Ollama Artifact
+        run: |
+          if [ ! -f ollama.tar.gz ]; then
+            echo "Ollama artifact not found!"
+            exit 1
+          fi
+          echo "Ollama artifact found."
+
       - name: Extract Ollama and Llama3
         run: |
+          echo "Extracting Ollama and Llama3 model..."
+          set -x
           tar -xzf ollama.tar.gz -C /
           nohup ollama serve &
           sleep 5
           curl -i http://localhost:11434
+          set +x
+          echo "Ollama and Llama3 model extracted and server started."
 
       - name: Download Python Packages Artifact
         uses: actions/download-artifact@v2
@@ -34,11 +46,23 @@ jobs:
           name: pip-packages-artifact
           path: .
 
+      - name: Verify Python Packages Artifact
+        run: |
+          if [ ! -f pip-packages.tar.gz ]; then
+            echo "Python packages artifact not found!"
+            exit 1
+          fi
+          echo "Python packages artifact found."
+
       - name: Extract Python Packages
         run: |
+          echo "Extracting Python packages..."
+          set -x
           tar -xzf pip-packages.tar.gz -C ~
           python3 -m pip install --upgrade pip
           pip install litellm openai python-dotenv --no-index --find-links ~/.cache/pip
+          set +x
+          echo "Python packages extracted and installed."
 
       - name: Fetch Base Branch
         run: git fetch origin main:main
