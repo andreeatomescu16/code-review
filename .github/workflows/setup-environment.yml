@@ -14,38 +14,24 @@ jobs:
       - name: Install Ollama
         run: |
           echo "Installing Ollama..."
+          set -x
           curl -fsSL https://ollama.com/install.sh | sudo -E sh
+          set +x
           echo "Ollama installation completed."
+
+      - name: Verify Ollama Installation
+        run: |
+          if command -v ollama &> /dev/null
+          then
+              echo "Ollama installed successfully."
+          else
+              echo "Ollama installation failed."
+              exit 1
+          fi
 
       - name: Pull Llama3 Model
         run: |
           echo "Pulling Llama3 model..."
+          set -x
           ollama pull llama3
-          echo "Llama3 model pulled successfully."
-
-      - name: Install Python Dependencies
-        run: |
-          echo "Installing Python dependencies..."
-          python3 -m pip install --upgrade pip
-          pip install litellm openai python-dotenv
-          echo "Python dependencies installed successfully."
-
-      - name: Save Ollama and Llama3 as Artifact
-        run: |
-          echo "Saving Ollama and Llama3 model as an artifact..."
-          tar -czf ollama.tar.gz /usr/local/bin/ollama ~/.ollama
-          echo "Artifact created: ollama.tar.gz"
-        uses: actions/upload-artifact@v2
-        with:
-          name: ollama-artifact
-          path: ollama.tar.gz
-
-      - name: Save Python Packages as Artifact
-        run: |
-          echo "Saving Python packages as an artifact..."
-          tar -czf pip-packages.tar.gz ~/.cache/pip
-          echo "Artifact created: pip-packages.tar.gz"
-        uses: actions/upload-artifact@v2
-        with:
-          name: pip-packages-artifact
-          path: pip-packages.tar.gz
+          set +x
