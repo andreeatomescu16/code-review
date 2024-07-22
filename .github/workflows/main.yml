@@ -36,14 +36,11 @@ jobs:
           pip install litellm openai python-dotenv
 
       - name: Fetch Base Branch
-        run: git fetch origin ${{ github.event.pull_request.base.ref }}
+        run: git fetch origin main:main
 
       - name: Get Changed Files
         id: changed-files
         uses: tj-actions/changed-files@v34
-        with:
-          files: |
-            **/*.py # Adjust the pattern to match the files you care about
 
       - name: List All Changed Files
         run: |
@@ -61,7 +58,7 @@ jobs:
           for file in $changed_files; do
             dir_name=$(dirname "$file")
             mkdir -p "diffs/$dir_name"
-            if git diff origin/${{ github.event.pull_request.base.ref }} -- "$file" > "diffs/$file.diff"; then
+            if git diff origin/main -- "$file" > "diffs/$file.diff"; then
               echo "Diff for $file generated successfully."
             else
               echo "No diff generated for $file. Skipping."
