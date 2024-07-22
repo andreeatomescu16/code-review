@@ -57,16 +57,7 @@ def create_and_merge_pull_request():
         pr_body = "This pull request is automatically created."
         pr = repo.create_pull(title=pr_title, body=pr_body, head=head, base=base)
         print(f"Pull request created: {pr.html_url}")
-
-    # Attempt to merge the pull request
-    try:
-        merge_result = pr.merge()
-        if merge_result.merged:
-            print(f"Pull request merged: {pr.html_url}")
-        else:
-            print(f"Failed to merge pull request: {pr.html_url}")
-    except Exception as e:
-        print(f"An error occurred while merging the pull request: {e}")
+        
 
 if __name__ == "__main__":
     create_and_merge_pull_request()
