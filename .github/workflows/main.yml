@@ -15,7 +15,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Cache Ollama
+        id: cache-ollama
+        uses: actions/cache@v3
+        with:
+          path: /usr/local/bin/ollama
+          key: ollama-cache
+
       - name: Install Ollama
+        if: steps.cache-ollama.outputs.cache-hit != 'true'
         run: |
           curl -fsSL https://ollama.com/install.sh | sudo -E sh
 
@@ -26,9 +34,26 @@ jobs:
           sleep 5
           curl -i http://localhost:11434
 
+      - name: Cache Llama3 Model
+        id: cache-llama3
+        uses: actions/cache@v3
+        with:
+          path: /root/.ollama/models/llama3
+          key: llama3-model-cache
+
       - name: Pull Llama3 Model
+        if: steps.cache-llama3.outputs.cache-hit != 'true'
         run: |
           ollama pull llama3
+
+      - name: Cache Python Packages
+        id: cache-python-packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: python-packages-${{ runner.os }}-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            python-packages-${{ runner.os }}-
 
       - name: Install Python Dependencies
         run: |
