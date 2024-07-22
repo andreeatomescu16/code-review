@@ -1,74 +1,76 @@
 import sys
-import openai
 import os
-from dotenv import load_dotenv
 from litellm import completion
+from dotenv import load_dotenv
 
 load_dotenv()
 
-def generate_feedback(code):
+def generate_feedback(diff):
     """Generate feedback using OpenAI GPT model."""
     system_message = f"""\
-        Please review the code below and identify any syntax or logical errors, suggest
-        ways to refactor and improve code quality, enhance performance, address security
-        concerns, and align with best practices. Provide specific examples for each area
-        and limit your recommendations to three per category.
+I will provide for you the differences extracted with a github function between the initial and the final code. 
+Please review the code below and identify any syntax or logical errors, suggest
+ways to refactor and improve code quality, enhance performance, address security
+concerns, and align with best practices. Provide specific examples for each area
+and limit your recommendations to three per category.
 
-        Use the following response format, keeping the section headings as-is, and provide
-        your feedback. Use bullet points for each response. The provided examples are for
-        illustration purposes only and should not be repeated.
+Use the following response format, keeping the section headings as-is, and provide
+your feedback. Use bullet points for each response. The provided examples are for
+illustration purposes only and should not be repeated.
 
-        **Syntax and logical errors (example)**:
-        - Incorrect indentation on line 12
-        - Missing closing parenthesis on line 23
+**Syntax and logical errors (example)**:
+- Incorrect indentation on line 12
+- Missing closing parenthesis on line 23
 
-        **Code refactoring and quality (example)**:
-        - Replace multiple if-else statements with a switch case for readability
-        - Extract repetitive code into separate functions
+**Code refactoring and quality (example)**:
+- Replace multiple if-else statements with a switch case for readability
+- Extract repetitive code into separate functions
 
-        **Performance optimization (example)**:
-        - Use a more efficient sorting algorithm to reduce time complexity
-        - Cache results of expensive operations for reuse
+**Performance optimization (example)**:
+- Use a more efficient sorting algorithm to reduce time complexity
+- Cache results of expensive operations for reuse
 
-        **Security vulnerabilities (example)**:
-        - Sanitize user input to prevent SQL injection attacks
-        - Use prepared statements for database queries
+**Security vulnerabilities (example)**:
+- Sanitize user input to prevent SQL injection attacks
+- Use prepared statements for database queries
 
-        **Best practices (example)**:
-        - Add meaningful comments and documentation to explain the code
-        - Follow consistent naming conventions for variables and functions
+**Best practices (example)**:
+- Add meaningful comments and documentation to explain the code
+- Follow consistent naming conventions for variables and functions
 
-        Code:
-        ```
-        {code}
-        ```
+Code changes:
 
-        Your review:"""
+{diff}
 
+Your review:"""
 
     response = completion(
-    model="ollama/llama3",
-    # model="gpt-4", 
-    messages=[
+        model="ollama/llama3",
+        messages=[
             {"role": "system", "content": system_message},
-            {"role": "user", "content": f"Please review the following code and provide feedback:\n\n{code}"}
         ],
-    api_base="http://localhost:11434"
+        api_base="http://localhost:11434"
     )
 
     return response['choices'][0]['message']['content']
 
-
-def review_code(files):
+def review_code_diffs(diffs):
     review_results = []
-    for file_name in files.split():
-        with open(file_name, 'r') as file:
-            code = file.read()
-
-        # Perform code review and return the result
-        answer = generate_feedback(code)
-        review_results.append(f"Code review for {file_name}: \n{answer}\n")
+    for file_name, diff in diffs.items():
+        print("The differences are:\n", diff)
+        answer = generate_feedback(diff)
+        review_results.append(f"FILE: {file_name}\nDIFF: {diff}\nENDDIFF\nREVIEW: {answer}\nENDREVIEW")
     return "\n".join(review_results)
+
+def get_file_diffs(file_list):
+    diffs = {}
+    for file_name in file_list.split():
+        diff_file = f"diffs/{file_name}.diff"
+        if os.path.exists(diff_file):
+            with open(diff_file, 'r') as file:
+                diff = file.read()
+            diffs[file_name] = diff
+    return diffs
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -76,6 +78,8 @@ if __name__ == "__main__":
         sys.exit(1)
 
     files = sys.argv[1]
-    result = review_code(files)
-    print(result)
+    file_diffs = get_file_diffs(files)
+    result = review_code_diffs(file_diffs)
+    with open('reviews.txt', 'w') as output_file:
+        output_file.write(result)
  
