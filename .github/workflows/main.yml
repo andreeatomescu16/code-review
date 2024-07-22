@@ -15,50 +15,30 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Cache Ollama
-        id: cache-ollama
-        uses: actions/cache@v3
+      - name: Download Ollama and Llama3 Artifact
+        uses: actions/download-artifact@v2
         with:
-          path: /usr/local/bin/ollama
-          key: ollama-cache
+          name: ollama-artifact
+          path: .
 
-      - name: Install Ollama
-        if: steps.cache-ollama.outputs.cache-hit != 'true'
+      - name: Extract Ollama and Llama3
         run: |
-          curl -fsSL https://ollama.com/install.sh | sudo -E sh
-
-      - name: Start Ollama Service
-        run: |
+          tar -xzf ollama.tar.gz -C /
           nohup ollama serve &
-
           sleep 5
           curl -i http://localhost:11434
 
-      - name: Cache Llama3 Model
-        id: cache-llama3
-        uses: actions/cache@v3
+      - name: Download Python Packages Artifact
+        uses: actions/download-artifact@v2
         with:
-          path: ~/.ollama/models/llama3
-          key: llama3-model-cache
+          name: pip-packages-artifact
+          path: .
 
-      - name: Pull Llama3 Model
-        if: steps.cache-llama3.outputs.cache-hit != 'true'
+      - name: Extract Python Packages
         run: |
-          ollama pull llama3
-
-      - name: Cache Python Packages
-        id: cache-python-packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: python-packages-${{ runner.os }}-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            python-packages-${{ runner.os }}-
-
-      - name: Install Python Dependencies
-        run: |
+          tar -xzf pip-packages.tar.gz -C ~
           python3 -m pip install --upgrade pip
-          pip install litellm openai python-dotenv
+          pip install litellm openai python-dotenv --no-index --find-links ~/.cache/pip
 
       - name: Fetch Base Branch
         run: git fetch origin main:main
