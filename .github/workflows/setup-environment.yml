@@ -63,6 +63,7 @@ jobs:
           tar -czf ollama.tar.gz /usr/local/bin/ollama ~/.ollama
           set +x
           echo "Artifact created: ollama.tar.gz"
+      - name: Upload Ollama and Llama3 Artifact
         uses: actions/upload-artifact@v2
         with:
           name: ollama-artifact
@@ -75,6 +76,7 @@ jobs:
           tar -czf pip-packages.tar.gz ~/.cache/pip
           set +x
           echo "Artifact created: pip-packages.tar.gz"
+      - name: Upload Python Packages Artifact
         uses: actions/upload-artifact@v2
         with:
           name: pip-packages-artifact
