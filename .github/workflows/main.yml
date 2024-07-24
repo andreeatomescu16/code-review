@@ -148,6 +148,16 @@ jobs:
                   echo "Original Line Count: $original_line_count"
                   echo "New Start Line: $new_start_line"
                   echo "New Line Count: $new_line_count"
+
+                elif [[ $hunk_header =~ @@\ -([0-9]+),([0-9]+)\ \+([0-9]+)\ @@ ]]; then
+                  original_start_line="${BASH_REMATCH[1]}"
+                  original_line_count="${BASH_REMATCH[2]}"
+                  new_start_line="${BASH_REMATCH[3]}"
+                  new_line_count="${BASH_REMATCH[4]}"
+                  echo "Original Start Line: $original_start_line"
+                  echo "Original Line Count: $original_line_count"
+                  echo "New Start Line: $new_start_line"
+                  
                 else
                   echo "Failed to parse hunk header"
                   exit 1
