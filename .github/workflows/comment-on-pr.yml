@@ -1,4 +1,4 @@
-name: Comment on PR File Changes
+name: PR Review Comment
 
 on:
   pull_request:
@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install jq
-        run: sudo apt-get install -y jq
+        run: sudo apt-get install jq
 
       - name: Add review comment to PR
         env:
@@ -22,15 +22,21 @@ jobs:
           pr_number=${{ github.event.pull_request.number }}
           owner=$(echo "${{ github.repository }}" | cut -d'/' -f1)
           repo=$(echo "${{ github.repository }}" | cut -d'/' -f2)
-          file_path="newfile.py"  # Set this to the relative path of your file
-          body="This is an automated review comment on the file changes."
-          line=3  # Set this to the line number where you want to comment
+          file_path="newfile.py"  # Change to the actual file path
+          body="This is an automated review comment."
+          line=10  # Change to the line number where you want to comment
 
+          # Get the latest commit ID
+          commit_id=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/$owner/$repo/pulls/$pr_number/commits" | jq -r '.[-1].sha')
+
+          # Create a review with a comment
           curl -s -H "Authorization: token $GITHUB_TOKEN" \
             -X POST \
             -d "$(jq -n \
               --arg body "$body" \
               --arg path "$file_path" \
               --argjson line $line \
-              '{"body":$body,"path":$path,"line":$line,"side":"RIGHT"}')" \
-            "https://api.github.com/repos/$owner/$repo/pulls/$pr_number/comments"
+              --arg commit_id "$commit_id" \
+              '[{"body":$body,"path":$path,"position":$line,"commit_id":$commit_id}]')" \
+            "https://api.github.com/repos/$owner/$repo/pull/$pr_number/files"
