@@ -15,7 +15,7 @@ jobs:
       - name: Add comment to PR
         uses: peter-evans/create-or-update-comment@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.MY_GITHUB_TOKEN }}
           repository: ${{ github.repository }}
           issue-number: ${{ github.event.pull_request.number }}
           body: |
