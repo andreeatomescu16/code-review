@@ -105,7 +105,7 @@ jobs:
         id: get_commit
         run: echo "commit_id=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
-            - name: Add Code Suggestions Comments
+      - name: Add Code Suggestions Comments
         run: |
           commit_id=${{ env.commit_id }}
           file_names=()
@@ -117,11 +117,11 @@ jobs:
             if [[ $line == "FILE: "* ]]; then
                 file_names+=("${line#FILE: }")
             elif [[ $line == "DIFF: "* ]]; then
-                diff=""
-                while IFS= read -r diff_line; do
-                    [[ $diff_line == "ENDDIFF" ]] && break
-                    diff+="$diff_line"$'\n'
-                done
+              diff=""
+              while IFS= read -r diff_line; do
+                  [[ $diff_line == "ENDDIFF" ]] && break
+                  diff+="$diff_line"$'\n'
+              done
             elif [[ $line == "REVIEW: "* ]]; then
                 review=""
                 while IFS= read -r review_line; do
@@ -138,8 +138,7 @@ jobs:
                 cat aux.txt
 
                 # Parse diff
-                hunk_header=$(grep -o '@@ [^@]* @@' <<< "$diff" | head -n 1)
-                echo "Hunk Header: $hunk_header"
+                hunk_header=$(grep -o '@@ [^@]* @@' <<< "$diff")
                 if [[ $hunk_header =~ @@\ -([0-9]+),([0-9]+)\ \+([0-9]+),([0-9]+)\ @@ ]]; then
                   original_start_line="${BASH_REMATCH[1]}"
                   original_line_count="${BASH_REMATCH[2]}"
@@ -149,53 +148,44 @@ jobs:
                   echo "Original Line Count: $original_line_count"
                   echo "New Start Line: $new_start_line"
                   echo "New Line Count: $new_line_count"
+
+                elif [[ $hunk_header =~ @@\ -([0-9]+),([0-9]+)\ \+([0-9]+)\ @@ ]]; then
+                  original_start_line="${BASH_REMATCH[1]}"
+                  original_line_count="${BASH_REMATCH[2]}"
+                  new_start_line="${BASH_REMATCH[3]}"
+                  new_line_count="${BASH_REMATCH[4]}"
+                  echo "Original Start Line: $original_start_line"
+                  echo "Original Line Count: $original_line_count"
+                  echo "New Start Line: $new_start_line"
+                  
                 else
-                  echo "Failed to parse hunk header: $hunk_header"
+                  echo "Failed to parse hunk header"
                   exit 1
                 fi
 
-                # Determine the side (LEFT/RIGHT) and start line
-                first_char=$(grep -m 1 '^[+-]' <<< "$diff" | cut -c 1)
-                echo "First Char: $first_char"
+                # Get the first character of the hunk content                
+                first_char=$(echo "$diff" | grep -o '@@ [^@]* @@' | sed 's/@@ //; s/ @@//' | cut -c 1)
+                echo $first_char
                 if [[ "$first_char" == "-" ]]; then
                   side="LEFT"
                   start_line=$original_start_line
+                  start_side="LEFT"
                 elif [[ "$first_char" == "+" ]]; then
                   side="RIGHT"
                   start_line=$new_start_line
-                else
-                  side="RIGHT"
-                  start_line=$new_start_line
+                  start_side="RIGHT"
                 fi
 
-                echo "Side: $side, Start Line: $start_line, File: ${file_names[-1]}"
+                echo $side, $start_line, $start_side, "${file_names[-1]}"
 
-                # Escape comments for JSON
-                escaped_comments=$(jq -s -R -r @json <<< "$(cat aux.txt)")
-                payload=$(jq -n \
-                  --arg body "$escaped_comments" \
-                  --arg commit_id "$commit_id" \
-                  --arg path "${file_names[-1]}" \
-                  --argjson line $start_line \
-                  --arg side "$side" \
-                  '{body: $body, commit_id: $commit_id, path: $path, line: $line, side: $side}')
-                echo "Payload: $payload"
-                response=$(curl -s -L -w "%{http_code}" -o response.txt \
-                  -X POST \
-                  -H "Accept: application/vnd.github+json" \
-                  -H "Authorization: Bearer ${{ secrets.MY_GITHUB_TOKEN }}" \
-                  -H "X-GitHub-Api-Version: 2022-11-28" \
-                  https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.number }}/comments \
-                  -d "$payload")
-                http_code=$(tail -n1 <<< "$response")
-                body=$(<response.txt)
-                echo "HTTP Status Code: $http_code"
-                echo "Response Body: $body"
-
-                if [[ "$http_code" -ne 201 ]]; then
-                  echo "Failed to create comment: $body"
-                  exit 1
-                fi
+                escaped_comments=$(echo "$(cat aux.txt)" | jq -s -R -r @json)
+                curl -s -L \
+                -X POST \
+                -H "Accept: application/vnd.github+json" \
+                -H "Authorization: Bearer ${{ secrets.MY_GITHUB_TOKEN }}" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.number }}/comments \
+                -d "{\"body\":$escaped_comments, \"commit_id\":\"$commit_id\", \"path\":\"${file_names[-1]}\", \"line\":$start_line, \"side\":\"$side\"}"
 
                 > aux.txt
             fi
