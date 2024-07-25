@@ -1,0 +1,36 @@
+name: PR Review Comment
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  add-review-comment:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install jq
+        run: sudo apt-get install jq
+
+      - name: Add review comment to PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+        run: |
+          pr_number=${{ github.event.pull_request.number }}
+          owner=$(echo "${{ github.repository }}" | cut -d'/' -f1)
+          repo=$(echo "${{ github.repository }}" | cut -d'/' -f2)
+          file_path="newfile.py"  # Set this to the relative path of your file
+          body="This is an automated review comment."  # Set this to your desired comment text
+          line=1  # Set this to the line number where you want to comment
+
+          curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            -X POST \
+            -d "$(jq -n \
+              --arg body "$body" \
+              --arg path "$file_path" \
+              --argjson line $line \
+              '{"body":$body,"path":$path,"line":$line,"side":"RIGHT"}')" \
+            "https://api.github.com/repos/$owner/$repo/pulls/$pr_number/comments"
