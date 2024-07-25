@@ -147,7 +147,9 @@ jobs:
 
                 # Parse diff
                 hunk_header=$(grep -o '@@ [^@]* @@' <<< "$diff")
+                
                 if [[ $hunk_header =~ @@\ -([0-9]+),([0-9]+)\ \+([0-9]+),([0-9]+)\ @@ ]]; then
+                  # Standard format with counts
                   original_start_line="${BASH_REMATCH[1]}"
                   original_line_count="${BASH_REMATCH[2]}"
                   new_start_line="${BASH_REMATCH[3]}"
@@ -157,16 +159,32 @@ jobs:
                   echo "New Start Line: $new_start_line"
                   echo "New Line Count: $new_line_count"
                 elif [[ $hunk_header =~ @@\ -([0-9]+),([0-9]+)\ \+([0-9]+)\ @@ ]]; then
+                  # Without counts in the new file
                   original_start_line="${BASH_REMATCH[1]}"
                   original_line_count="${BASH_REMATCH[2]}"
                   new_start_line="${BASH_REMATCH[3]}"
                   echo "Original Start Line: $original_start_line"
                   echo "Original Line Count: $original_line_count"
                   echo "New Start Line: $new_start_line"
+                elif [[ $hunk_header =~ @@\ -([0-9]+)\ \+([0-9]+),([0-9]+)\ @@ ]]; then
+                  # Without counts in the original file
+                  original_start_line="${BASH_REMATCH[1]}"
+                  new_start_line="${BASH_REMATCH[2]}"
+                  new_line_count="${BASH_REMATCH[3]}"
+                  echo "Original Start Line: $original_start_line"
+                  echo "New Start Line: $new_start_line"
+                  echo "New Line Count: $new_line_count"
+                elif [[ $hunk_header =~ @@\ -([0-9]+)\ \+([0-9]+)\ @@ ]]; then
+                  # Without counts in both
+                  original_start_line="${BASH_REMATCH[1]}"
+                  new_start_line="${BASH_REMATCH[2]}"
+                  echo "Original Start Line: $original_start_line"
+                  echo "New Start Line: $new_start_line"
                 else
                   echo "Failed to parse hunk header"
                   exit 1
                 fi
+
 
                 # Get the first character of the hunk content                
                 first_char=$(echo "$diff" | grep -o '@@ [^@]* @@' | sed 's/@@ //; s/ @@//' | cut -c 1)
