@@ -36,7 +36,7 @@ jobs:
           const pull_number = context.payload.pull_request.number;
           const body = 'This is an automated review comment.';
           const path = 'newfile.py';  // Change to the actual file path
-          const targetLine = 3;  // Change to the line number where you want to comment
+          const targetLine = 10;  // Change to the line number where you want to comment
 
           async function run() {
             try {
@@ -55,23 +55,30 @@ jobs:
               let position = null;
               let diffLine = 0;
               let lineNumber = 0;
+              let inHunk = false;
 
               for (const line of file.patch.split('\n')) {
                 if (line.startsWith('@@')) {
-                  const match = /@@ -\d+,\d+ \+(\d+),\d+ @@/.exec(line);
+                  const match = /@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(line);
                   if (match) {
                     lineNumber = parseInt(match[1], 10) - 1;
+                    inHunk = true;
                   }
-                } else if (line.startsWith('+') && !line.startsWith('+++')) {
-                  lineNumber++;
-                  if (lineNumber === targetLine) {
-                    position = diffLine;
-                    break;
+                } else if (inHunk) {
+                  if (line.startsWith('+')) {
+                    lineNumber++;
+                    diffLine++;
+                    if (lineNumber === targetLine) {
+                      position = diffLine;
+                      break;
+                    }
+                  } else if (!line.startsWith('-')) {
+                    lineNumber++;
+                    diffLine++;
+                  } else {
+                    diffLine++;
                   }
-                } else if (!line.startsWith('-') && !line.startsWith('---')) {
-                  lineNumber++;
                 }
-                diffLine++;
               }
 
               if (position === null) {
