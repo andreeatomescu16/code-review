@@ -22,7 +22,7 @@ jobs:
 
       - name: Add review comment to PR
         env:
-          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           node -e "
           const github = require('@actions/github');
@@ -57,7 +57,9 @@ jobs:
               let lineNumber = 0;
               let inHunk = false;
 
+              console.log('Processing diff for file:', path);
               for (const line of file.patch.split('\n')) {
+                console.log(diffLine, lineNumber, line);
                 if (line.startsWith('@@')) {
                   const match = /@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(line);
                   if (match) {
