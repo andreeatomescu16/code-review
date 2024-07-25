@@ -36,7 +36,7 @@ jobs:
             const pull_number = context.payload.pull_request.number;
             const body = "This is an automated review comment.";
             const path = "newfile.py";  // Change to the actual file path
-            const targetLine = 10;  // Change to the line number where you want to comment
+            const targetLine = 5;  // Change to the line number where you want to comment
 
             async function run() {
               try {
@@ -52,8 +52,8 @@ jobs:
                 }
 
                 let position = null;
-                let diffLine = 0;
                 let lineNumber = 0;
+                let diffLine = 0;
                 let inHunk = false;
 
                 console.log("Processing diff for file:", path);
@@ -68,17 +68,15 @@ jobs:
                   } else if (inHunk) {
                     if (line.startsWith("+")) {
                       lineNumber++;
-                      diffLine++;
                       if (lineNumber === targetLine) {
                         position = diffLine;
                         break;
                       }
-                    } else if (line.startsWith(" ")) {
-                      lineNumber++;
-                      diffLine++;
-                    } else {
-                      diffLine++;
                     }
+                    if (!line.startsWith("-")) {
+                      lineNumber++;
+                    }
+                    diffLine++;
                   }
                 }
 
