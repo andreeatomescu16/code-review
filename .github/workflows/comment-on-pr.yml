@@ -15,11 +15,15 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '16'
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install @actions/github @actions/core
 
       - name: Add review comment to PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
         run: |
-          npm install @actions/github @actions/core
           node -e "
           const github = require('@actions/github');
           const core = require('@actions/core');
@@ -32,9 +36,9 @@ jobs:
           const pull_number = context.payload.pull_request.number;
           const body = 'This is an automated review comment.';
           const path = 'newfile.py';  // Change to the actual file path
-          const position = 10;  // Change to the line number where you want to comment
+          const position = 3;  // Change to the line number where you want to comment
 
-          octokit.pulls.createReview({
+          octokit.rest.pulls.createReview({
             owner,
             repo,
             pull_number,
@@ -54,5 +58,3 @@ jobs:
             core.setFailed(error.message);
           });
           "
-        env:
-          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
