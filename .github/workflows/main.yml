@@ -15,25 +15,54 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Cache Python Packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Cache Ollama
+        id: cache-ollama
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.ollama
+            /usr/local/bin/ollama
+          key: ollama-${{ hashFiles('ollama-version.txt') }}-${{ hashFiles('model-name.txt') }}
+          restore-keys: |
+            ollama-
+
       - name: Install Ollama
+        if: steps.cache-ollama.outputs.cache-hit != 'true'
         run: |
           curl -fsSL https://ollama.com/install.sh | sudo -E sh
 
       - name: Start Ollama Service
         run: |
           nohup ollama serve &
-
           sleep 5
           curl -i http://localhost:11434
 
+      - name: Cache Llama3 Model
+        id: cache-model
+        uses: actions/cache@v3
+        with:
+          path: ~/.ollama/models/llama3
+          key: llama3-model-${{ hashFiles('ollama-version.txt') }}-${{ hashFiles('model-name.txt') }}
+          restore-keys: |
+            llama3-model-
+
       - name: Pull Llama3 Model
+        if: steps.cache-model.outputs.cache-hit != 'true'
         run: |
           ollama pull llama3
-
-      - name: Install Python Dependencies
-        run: |
-          python3 -m pip install --upgrade pip
-          pip install litellm openai python-dotenv
 
       - name: Fetch Base Branch
         run: git fetch origin main:main
@@ -76,7 +105,15 @@ jobs:
         id: get_commit
         run: echo "commit_id=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
+      - name: Install Octokit
+        run: npm install @octokit/core
+
       - name: Add Code Suggestions Comments
+        env:
+          COMMIT_ID: ${{ env.commit_id }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_NUMBER: ${{ github.event.number }}
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
         run: |
           commit_id=${{ env.commit_id }}
           file_names=()
@@ -146,7 +183,9 @@ jobs:
 
                 echo $side, $start_line, $start_side, "${file_names[-1]}"
 
+                echo $commit_id
                 escaped_comments=$(echo "$(cat aux.txt)" | jq -s -R -r @json)
+                echo $commit_id
                 curl -s -L \
                 -X POST \
                 -H "Accept: application/vnd.github+json" \
@@ -155,7 +194,7 @@ jobs:
                 https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.number }}/comments \
                 -d "{\"body\":$escaped_comments, \"commit_id\":\"$commit_id\", \"path\":\"${file_names[-1]}\", \"line\":$start_line, \"side\":\"$side\"}"
 
+
                 > aux.txt
             fi
           done < reviews.txt
- 
