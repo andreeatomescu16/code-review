@@ -74,39 +74,10 @@ jobs:
                       position = diffLine;
                       break;
                     }
-                  } else if (!line.startsWith('-')) {
+                  } else if (line.startsWith(' ')) {
                     lineNumber++;
                     diffLine++;
                   } else {
                     diffLine++;
                   }
-                }
-              }
-
-              if (position === null) {
-                throw new Error('Position not found in diff');
-              }
-
-              await octokit.rest.pulls.createReview({
-                owner,
-                repo,
-                pull_number,
-                event: 'COMMENT',
-                body: 'Automated review comment',
-                comments: [
-                  {
-                    path,
-                    position,
-                    body
-                  }
-                ]
-              });
-              console.log('Review comment added successfully');
-            } catch (error) {
-              console.error('Error adding review comment', error);
-              core.setFailed(error.message);
-            }
-          }
-
-          run();
-          "
+          
