@@ -53,6 +53,7 @@ jobs:
 
                 let position = null;
                 let lineNumber = 0;
+                let addedLineNumber = 0;
                 let inHunk = false;
 
                 console.log("Processing diff for file:", path);
@@ -61,14 +62,16 @@ jobs:
                   if (line.startsWith("@@")) {
                     const match = /@@ -\\d+(?:,\\d+)? \\+(\\d+)(?:,\\d+)? @@/.exec(line);
                     if (match) {
-                      lineNumber = parseInt(match[1], 10) - 1;  // Correct lineNumber initialization
+                      lineNumber = parseInt(match[1], 10) - 1;
+                      addedLineNumber = 0;
                       inHunk = true;
                     }
                   } else if (inHunk) {
                     if (line.startsWith("+")) {
                       lineNumber++;
+                      addedLineNumber++;
                       if (lineNumber === targetLine) {
-                        position = lineNumber;  // Ensure position is set correctly
+                        position = addedLineNumber;
                         break;
                       }
                     } else if (!line.startsWith("-")) {
