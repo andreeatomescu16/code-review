@@ -6,7 +6,7 @@ upper = 100
 for num in range(lower, upper + 1):
    # all prime numbers are greater than 1
    print("DOAMNE AJUTA")
-       for i in range(2, num):
+       for i in range(3, num):
            if (num % i) == 0:
                break
        else:
