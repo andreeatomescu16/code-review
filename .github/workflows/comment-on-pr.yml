@@ -23,7 +23,7 @@ jobs:
           owner=$(echo "${{ github.repository }}" | cut -d'/' -f1)
           repo=$(echo "${{ github.repository }}" | cut -d'/' -f2)
           file_path="newfile.py"  # Change to the actual file path
-          body="This is an automated review comment."
+          body="This is a sh!t."
           line=10  # Change to the line number where you want to comment
 
           # Get the latest commit ID
