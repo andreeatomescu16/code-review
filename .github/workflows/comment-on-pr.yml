@@ -22,62 +22,90 @@ jobs:
 
       - name: Add review comment to PR
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
         run: |
-          node -e "
-          const github = require('@actions/github');
-          const core = require('@actions/core');
-          const token = process.env.GITHUB_TOKEN;
-          const octokit = github.getOctokit(token);
-          const context = github.context;
+          node -e '
+            const github = require("@actions/github");
+            const core = require("@actions/core");
+            const token = process.env.GITHUB_TOKEN;
+            const octokit = github.getOctokit(token);
+            const context = github.context;
 
-          const owner = context.repo.owner;
-          const repo = context.repo.repo;
-          const pull_number = context.payload.pull_request.number;
-          const body = 'This is an automated review comment.';
-          const path = 'newfile.py';  // Change to the actual file path
-          const targetLine = 10;  // Change to the line number where you want to comment
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const pull_number = context.payload.pull_request.number;
+            const body = "This is an automated review comment.";
+            const path = "newfile.py";  // Change to the actual file path
+            const targetLine = 10;  // Change to the line number where you want to comment
 
-          async function run() {
-            try {
-              // Get the pull request files to find the correct position
-              const { data: files } = await octokit.rest.pulls.listFiles({
-                owner,
-                repo,
-                pull_number
-              });
+            async function run() {
+              try {
+                const { data: files } = await octokit.rest.pulls.listFiles({
+                  owner,
+                  repo,
+                  pull_number
+                });
 
-              const file = files.find(f => f.filename === path);
-              if (!file) {
-                throw new Error('File not found in pull request');
-              }
+                const file = files.find(f => f.filename === path);
+                if (!file) {
+                  throw new Error("File not found in pull request");
+                }
 
-              let position = null;
-              let diffLine = 0;
-              let lineNumber = 0;
-              let inHunk = false;
+                let position = null;
+                let diffLine = 0;
+                let lineNumber = 0;
+                let inHunk = false;
 
-              console.log('Processing diff for file:', path);
-              for (const line of file.patch.split('\n')) {
-                console.log(diffLine, lineNumber, line);
-                if (line.startsWith('@@')) {
-                  const match = /@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(line);
-                  if (match) {
-                    lineNumber = parseInt(match[1], 10) - 1;
-                    inHunk = true;
-                  }
-                } else if (inHunk) {
-                  if (line.startsWith('+')) {
-                    lineNumber++;
-                    diffLine++;
-                    if (lineNumber === targetLine) {
-                      position = diffLine;
-                      break;
+                console.log("Processing diff for file:", path);
+                for (const line of file.patch.split("\\n")) {
+                  console.log(diffLine, lineNumber, line);
+                  if (line.startsWith("@@")) {
+                    const match = /@@ -\\d+(?:,\\d+)? \\+(\\d+)(?:,\\d+)? @@/.exec(line);
+                    if (match) {
+                      lineNumber = parseInt(match[1], 10) - 1;
+                      inHunk = true;
                     }
-                  } else if (line.startsWith(' ')) {
-                    lineNumber++;
-                    diffLine++;
-                  } else {
-                    diffLine++;
+                  } else if (inHunk) {
+                    if (line.startsWith("+")) {
+                      lineNumber++;
+                      diffLine++;
+                      if (lineNumber === targetLine) {
+                        position = diffLine;
+                        break;
+                      }
+                    } else if (line.startsWith(" ")) {
+                      lineNumber++;
+                      diffLine++;
+                    } else {
+                      diffLine++;
+                    }
                   }
-          
+                }
+
+                if (position === null) {
+                  throw new Error("Position not found in diff");
+                }
+
+                await octokit.rest.pulls.createReview({
+                  owner,
+                  repo,
+                  pull_number,
+                  event: "COMMENT",
+                  body: "Automated review comment",
+                  comments: [
+                    {
+                      path,
+                      position,
+                      body
+                    }
+                  ]
+                });
+                console.log("Review comment added successfully");
+              } catch (error) {
+                console.error("Error adding review comment", error);
+                core.setFailed(error.message);
+              }
+            }
+
+            run();
+          '
