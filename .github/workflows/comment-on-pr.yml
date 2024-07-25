@@ -36,25 +36,59 @@ jobs:
           const pull_number = context.payload.pull_request.number;
           const body = 'This is an automated review comment.';
           const path = 'newfile.py';  // Change to the actual file path
-          const position = 3;  // Change to the line number where you want to comment
+          const line = 3;  // Change to the line number where you want to comment
 
-          octokit.rest.pulls.createReview({
-            owner,
-            repo,
-            pull_number,
-            event: 'COMMENT',
-            body: 'Automated review comment',
-            comments: [
-              {
-                path,
-                position,
-                body
+          async function run() {
+            try {
+              // Get the pull request files to find the correct position
+              const { data: files } = await octokit.rest.pulls.listFiles({
+                owner,
+                repo,
+                pull_number
+              });
+
+              const file = files.find(f => f.filename === path);
+              if (!file) {
+                throw new Error('File not found in pull request');
               }
-            ]
-          }).then(() => {
-            console.log('Review comment added successfully');
-          }).catch((error) => {
-            console.error('Error adding review comment', error);
-            core.setFailed(error.message);
-          });
+
+              // Find the correct position in the diff
+              let position = null;
+              let diffLine = 0;
+              for (const line of file.patch.split('\n')) {
+                if (line.startsWith('+') && !line.startsWith('+++')) {
+                  diffLine++;
+                }
+                if (diffLine === line) {
+                  position = diffLine;
+                  break;
+                }
+              }
+
+              if (position === null) {
+                throw new Error('Position not found in diff');
+              }
+
+              await octokit.rest.pulls.createReview({
+                owner,
+                repo,
+                pull_number,
+                event: 'COMMENT',
+                body: 'Automated review comment',
+                comments: [
+                  {
+                    path,
+                    position,
+                    body
+                  }
+                ]
+              });
+              console.log('Review comment added successfully');
+            } catch (error) {
+              console.error('Error adding review comment', error);
+              core.setFailed(error.message);
+            }
+          }
+
+          run();
           "
