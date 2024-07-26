@@ -58,18 +58,19 @@ jobs:
                 let position = null;
                 let originalLineNumber = 0;
                 let newLineNumber = 0;
+                let inHunk = false;
 
                 console.log("Processing diff for file:", path);
                 for (const line of file.patch.split("\\n")) {
-                  console.log("Current line:", line);
                   if (line.startsWith("@@")) {
                     const match = /@@ -(\d+),\d+ \+(\d+),\d+ @@/.exec(line);
                     if (match) {
                       originalLineNumber = parseInt(match[1], 10) - 1;
                       newLineNumber = parseInt(match[2], 10) - 1;
+                      inHunk = true;
                       console.log("New hunk starts, original line number set to:", originalLineNumber, "new line number set to:", newLineNumber);
                     }
-                  } else {
+                  } else if (inHunk) {
                     if (line.startsWith(" ")) {
                       originalLineNumber++;
                       newLineNumber++;
@@ -83,7 +84,7 @@ jobs:
                         break;
                       }
                     }
-                    console.log("Updated line numbers - originalLineNumber:", originalLineNumber, "newLineNumber:", newLineNumber);
+                    console.log("Processed line:", line, "Updated line numbers - originalLineNumber:", originalLineNumber, "newLineNumber:", newLineNumber);
                   }
                 }
 
