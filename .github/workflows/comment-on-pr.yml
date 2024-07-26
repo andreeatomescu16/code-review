@@ -56,29 +56,30 @@ jobs:
                 console.log("Found file in PR:", file);
 
                 let position = null;
-                let diffLineNumber = 0;
-                let targetDiffLineNumber = 0;
+                let originalLineNumber = 0;
+                let newLineNumber = 0;
 
                 console.log("Processing diff for file:", path);
                 for (const line of file.patch.split("\\n")) {
                   console.log("Current line:", line);
                   if (line.startsWith("@@")) {
-                    const match = /@@ -\\d+(?:,\\d+)? \\+(\\d+)(?:,\\d+)? @@/.exec(line);
+                    const match = /@@ -(\d+),\d+ \+(\d+),\d+ @@/.exec(line);
                     if (match) {
-                      diffLineNumber = parseInt(match[1], 10) - 1;
-                      console.log("New hunk starts, line number set to:", diffLineNumber);
+                      originalLineNumber = parseInt(match[1], 10) - 1;
+                      newLineNumber = parseInt(match[2], 10) - 1;
+                      console.log("New hunk starts, original line number set to:", originalLineNumber, "new line number set to:", newLineNumber);
                     }
-                  } else if (!line.startsWith("-")) {
-                    diffLineNumber++;
-                    console.log("Incremented diffLineNumber:", diffLineNumber);
-                    if (line.startsWith("+")) {
-                      targetDiffLineNumber++;
-                      console.log("Incremented targetDiffLineNumber:", targetDiffLineNumber);
-                      if (diffLineNumber === targetLine) {
-                        position = targetDiffLineNumber;
-                        console.log("Found target line, position set to:", position);
-                        break;
-                      }
+                  } else {
+                    if (!line.startsWith("-")) {
+                      newLineNumber++;
+                    }
+                    if (!line.startsWith("+")) {
+                      originalLineNumber++;
+                    }
+                    if (originalLineNumber === targetLine) {
+                      position = newLineNumber;
+                      console.log("Found target line, position set to:", position);
+                      break;
                     }
                   }
                 }
