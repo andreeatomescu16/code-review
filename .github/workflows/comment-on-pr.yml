@@ -36,7 +36,7 @@ jobs:
             const pull_number = context.payload.pull_request.number;
             const body = "This is an automated review comment.";
             const path = "newfile.py";  // Change to the actual file path
-            const targetLine = 5;  // Change to the line number where you want to comment
+            const targetLine = 10;  // Change to the line number where you want to comment
 
             async function run() {
               try {
@@ -87,6 +87,7 @@ jobs:
                 }
 
                 if (position === null) {
+                  console.error("Debug Info: Final values - originalLineNumber:", originalLineNumber, "newLineNumber:", newLineNumber, "targetLine:", targetLine);
                   throw new Error("Position not found in diff");
                 }
 
