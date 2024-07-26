@@ -1,10 +1,21 @@
-import sys
 import os
+import sys
 from litellm import completion
 from dotenv import load_dotenv
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type, before_sleep_log
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
+class CompletionError(Exception):
+    """Custom exception for completion errors"""
+    pass
+
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(), retry=retry_if_exception_type(Exception), before_sleep=before_sleep_log(logger, logging.WARNING))
 def generate_feedback(diff):
     """Generate feedback using OpenAI GPT model."""
     system_message = f"""\
@@ -44,15 +55,22 @@ Code changes:
 
 Your review:"""
 
-    response = completion(
-        model="ollama/llama3",
-        messages=[
-            {"role": "system", "content": system_message},
-        ],
-        api_base="http://localhost:11434"
-    )
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(), retry=retry_if_exception_type(Exception), before_sleep=before_sleep_log(logger, logging.WARNING))
+    def get_completion():
+        response = completion(
+            model="ollama/llama3",
+            messages=[
+                {"role": "system", "content": system_message},
+            ],
+            api_base="http://localhost:11434"
+        )
+        return response
 
-    return response['choices'][0]['message']['content']
+    try:
+        response = get_completion()
+        return response['choices'][0]['message']['content']
+    except Exception as e:
+        raise CompletionError(f"Failed to generate feedback after 3 retries: {str(e)}")
 
 def review_code_diffs(diffs):
     review_results = []
@@ -82,4 +100,3 @@ if __name__ == "__main__":
     result = review_code_diffs(file_diffs)
     with open('reviews.txt', 'w') as output_file:
         output_file.write(result)
- 
