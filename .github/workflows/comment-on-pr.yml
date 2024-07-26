@@ -62,6 +62,7 @@ jobs:
 
                 console.log("Processing diff for file:", path);
                 for (const line of file.patch.split("\\n")) {
+                  console.log("Current line:", line);
                   if (line.startsWith("@@")) {
                     const match = /@@ -(\d+),\d+ \+(\d+),\d+ @@/.exec(line);
                     if (match) {
