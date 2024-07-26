@@ -62,7 +62,6 @@ jobs:
 
                 console.log("Processing diff for file:", path);
                 for (const line of file.patch.split("\\n")) {
-                  console.log("Current line:", line);
                   if (line.startsWith("@@")) {
                     const match = /@@ -(\d+),\d+ \+(\d+),\d+ @@/.exec(line);
                     if (match) {
@@ -72,20 +71,24 @@ jobs:
                       console.log("New hunk starts, original line number set to:", originalLineNumber, "new line number set to:", newLineNumber);
                     }
                   } else if (inHunk) {
+                    console.log("Processing line within hunk:", line);
                     if (line.startsWith(" ")) {
                       originalLineNumber++;
                       newLineNumber++;
+                      console.log("Context line, incremented both line numbers. originalLineNumber:", originalLineNumber, "newLineNumber:", newLineNumber);
                     } else if (line.startsWith("-")) {
                       originalLineNumber++;
+                      console.log("Removed line, incremented originalLineNumber:", originalLineNumber);
                     } else if (line.startsWith("+")) {
                       newLineNumber++;
+                      console.log("Added line, incremented newLineNumber:", newLineNumber);
                       if (originalLineNumber + 1 === targetLine) {
                         position = newLineNumber;
                         console.log("Found target line, position set to:", position);
                         break;
                       }
                     }
-                    console.log("Processed line:", line, "Updated line numbers - originalLineNumber:", originalLineNumber, "newLineNumber:", newLineNumber);
+                    console.log("Updated line numbers - originalLineNumber:", originalLineNumber, "newLineNumber:", newLineNumber);
                   }
                 }
 
