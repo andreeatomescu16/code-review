@@ -1,7 +1,7 @@
 import os
-import subprocess
 from github import Github
 from dotenv import load_dotenv
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 # Load environment variables from a .env file if present
 load_dotenv()
@@ -17,6 +17,7 @@ if not GITHUB_TOKEN or not REPO_NAME:
 g = Github(GITHUB_TOKEN)
 repo = g.get_repo(REPO_NAME)
 
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(), retry=retry_if_exception_type(Exception))
 def get_latest_commit_branch():
     latest_commit_date = None
     latest_commit_branch = None
@@ -32,6 +33,7 @@ def get_latest_commit_branch():
 
     return latest_commit_branch
 
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(), retry=retry_if_exception_type(Exception))
 def create_and_merge_pull_request():
     base = repo.default_branch
     head = get_latest_commit_branch()
@@ -57,7 +59,6 @@ def create_and_merge_pull_request():
         pr_body = "This pull request is automatically created."
         pr = repo.create_pull(title=pr_title, body=pr_body, head=head, base=base)
         print(f"Pull request created: {pr.html_url}")
-        
 
 if __name__ == "__main__":
     create_and_merge_pull_request()
