@@ -36,7 +36,7 @@ jobs:
             const pull_number = context.payload.pull_request.number;
             const body = "This is an automated review comment.";
             const path = "newfile.py";  // Change to the actual file path
-            const targetLine = 10;  // Change to the line number where you want to comment
+            const targetLine = 5;  // Change to the line number where you want to comment
 
             async function run() {
               try {
@@ -70,16 +70,18 @@ jobs:
                       console.log("New hunk starts, original line number set to:", originalLineNumber, "new line number set to:", newLineNumber);
                     }
                   } else {
-                    if (!line.startsWith("-")) {
-                      newLineNumber++;
-                    }
-                    if (!line.startsWith("+")) {
+                    if (line.startsWith(" ")) {
                       originalLineNumber++;
-                    }
-                    if (originalLineNumber === targetLine) {
-                      position = newLineNumber;
-                      console.log("Found target line, position set to:", position);
-                      break;
+                      newLineNumber++;
+                    } else if (line.startsWith("-")) {
+                      originalLineNumber++;
+                    } else if (line.startsWith("+")) {
+                      newLineNumber++;
+                      if (originalLineNumber + 1 === targetLine) {
+                        position = newLineNumber;
+                        console.log("Found target line, position set to:", position);
+                        break;
+                      }
                     }
                   }
                 }
