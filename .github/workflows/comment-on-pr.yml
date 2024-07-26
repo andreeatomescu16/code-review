@@ -88,7 +88,7 @@ jobs:
                         break;
                       }
                     }
-                    console.log("Updated line numbers - originalLineNumber:", originalLineNumber, "newLineNumber:", newLineNumber);
+                    console.log("Processed line:", line, "Updated line numbers - originalLineNumber:", originalLineNumber, "newLineNumber:", newLineNumber);
                   }
                 }
 
