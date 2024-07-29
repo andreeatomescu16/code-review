@@ -106,7 +106,7 @@ jobs:
         run: echo "commit_id=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
       - name: Install Octokit
-        run: npm install @octokit/core
+        run: npm install @octokit/core node-fetch
 
       - name: Add Code Suggestions Comments
         env:
