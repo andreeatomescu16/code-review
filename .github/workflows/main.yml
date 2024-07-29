@@ -8,55 +8,26 @@ on:
 jobs:
   code_review:
     runs-on: ubuntu-latest
-
+    container:
+      image: andreeaa1611/code-review:latest
+      ports:
+        - 11434:11434
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
 
-      - name: Cache Python Packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+      - name: Check for dockerenv file
+        run: (ls /.dockerenv && echo Found dockerenv) || (echo No dockerenv)
 
-      - name: Install Dependencies
-        run: |
-          pip install -r requirements.txt
-
-      - name: Cache Ollama
-        id: cache-ollama
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.ollama
-            /usr/local/bin/ollama
-          key: ollama-${{ hashFiles('ollama-version.txt') }}-${{ hashFiles('model-name.txt') }}
-          restore-keys: |
-            ollama-
-
-      - name: Install Ollama
-        if: steps.cache-ollama.outputs.cache-hit != 'true'
-        run: |
-          curl -fsSL https://ollama.com/install.sh | sudo -E sh
+      - name: Configure Git Safe Directory
+        run: git config --global --add safe.directory /__w/ai-integration/ai-integration
 
       - name: Start Ollama Service
         run: |
-          nohup ollama serve &
-          sleep 5
-          curl -i http://localhost:11434
-
-      - name: Cache Llama3 Model
-        id: cache-model
-        uses: actions/cache@v3
-        with:
-          path: ~/.ollama/models/llama3
-          key: llama3-model-${{ hashFiles('ollama-version.txt') }}-${{ hashFiles('model-name.txt') }}
-          restore-keys: |
-            llama3-model-
+          nohup ollama serve > ollama.log 2>&1 &
+          sleep 5 # Increased sleep time to ensure service is running
+          curl -i http://localhost:11434 || (cat ollama.log && exit 1)
+          tail -f /dev/null &
 
       - name: Fetch Base Branch
         run: git fetch origin main:main
@@ -99,12 +70,9 @@ jobs:
         id: get_commit
         run: echo "commit_id=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
-      - name: Install Octokit
-        run: npm install @octokit/core
-
       - name: Add Code Suggestions Comments
         env:
-          COMMIT_ID: ${{ env.commit_id }}
+          COMMIT_ID: ${{ github.event.pull_request.head.sha }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_EVENT_NUMBER: ${{ github.event.number }}
           GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
@@ -131,82 +99,23 @@ jobs:
                     review+="$review_line"$'\n'
                 done
 
-                # Write the file name and review to aux.txt
-                echo "${file_names[-1]}" > aux.txt
-                echo -e "$diff" >> aux.txt
+                # Write the review to aux.txt
                 echo -e "$review" >> aux.txt
 
                 # Display the content of aux.txt
                 cat aux.txt
 
-                # Parse diff
-                hunk_header=$(grep -o '@@ [^@]* @@' <<< "$diff")
-                
-                if [[ $hunk_header =~ @@\ -([0-9]+),([0-9]+)\ \+([0-9]+),([0-9]+)\ @@ ]]; then
-                  # Standard format with counts
-                  original_start_line="${BASH_REMATCH[1]}"
-                  original_line_count="${BASH_REMATCH[2]}"
-                  new_start_line="${BASH_REMATCH[3]}"
-                  new_line_count="${BASH_REMATCH[4]}"
-                  echo "Original Start Line: $original_start_line"
-                  echo "Original Line Count: $original_line_count"
-                  echo "New Start Line: $new_start_line"
-                  echo "New Line Count: $new_line_count"
-                elif [[ $hunk_header =~ @@\ -([0-9]+),([0-9]+)\ \+([0-9]+)\ @@ ]]; then
-                  # Without counts in the new file
-                  original_start_line="${BASH_REMATCH[1]}"
-                  original_line_count="${BASH_REMATCH[2]}"
-                  new_start_line="${BASH_REMATCH[3]}"
-                  echo "Original Start Line: $original_start_line"
-                  echo "Original Line Count: $original_line_count"
-                  echo "New Start Line: $new_start_line"
-                elif [[ $hunk_header =~ @@\ -([0-9]+)\ \+([0-9]+),([0-9]+)\ @@ ]]; then
-                  # Without counts in the original file
-                  original_start_line="${BASH_REMATCH[1]}"
-                  new_start_line="${BASH_REMATCH[2]}"
-                  new_line_count="${BASH_REMATCH[3]}"
-                  echo "Original Start Line: $original_start_line"
-                  echo "New Start Line: $new_start_line"
-                  echo "New Line Count: $new_line_count"
-                elif [[ $hunk_header =~ @@\ -([0-9]+)\ \+([0-9]+)\ @@ ]]; then
-                  # Without counts in both
-                  original_start_line="${BASH_REMATCH[1]}"
-                  new_start_line="${BASH_REMATCH[2]}"
-                  echo "Original Start Line: $original_start_line"
-                  echo "New Start Line: $new_start_line"
-                else
-                  echo "Failed to parse hunk header"
-                  exit 1
-                fi
-
-
-                # Get the first character of the hunk content                
-                first_char=$(echo "$diff" | grep -o '@@ [^@]* @@' | sed 's/@@ //; s/ @@//' | cut -c 1)
-                echo $first_char
-                if [[ "$first_char" == "-" ]]; then
-                  side="LEFT"
-                  start_line=$original_start_line
-                  start_side="LEFT"
-                elif [[ "$first_char" == "+" ]]; then
-                  side="RIGHT"
-                  start_line=$new_start_line
-                  start_side="RIGHT"
-                fi
-
-                echo $side, $start_line, $start_side, "${file_names[-1]}"
-
-                echo $commit_id
                 escaped_comments=$(echo "$(cat aux.txt)" | jq -s -R -r @json)
-                echo $commit_id
-                curl -s -L \
-                -X POST \
-                -H "Accept: application/vnd.github+json" \
-                -H "Authorization: Bearer ${{ secrets.MY_GITHUB_TOKEN }}" \
-                -H "X-GitHub-Api-Version: 2022-11-28" \
-                https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.number }}/comments \
-                -d "{\"body\":$escaped_comments, \"commit_id\":\"$commit_id\", \"path\":\"${file_names[-1]}\", \"line\":$start_line, \"side\":\"$side\"}"
 
+                parsed_values=$(python3 parse_diff.py <<< "$diff")
+                start_line=$(echo "$parsed_values" | awk '{print $1}')
+                line=$(echo "$parsed_values" | awk '{print $2}')
+                start_side=$(echo "$parsed_values" | awk '{print $3}')
+                side=$(echo "$parsed_values" | awk '{print $4}')
+
+                node post-comments.js "$escaped_comments" "${{ github.event.pull_request.head.sha }}" "${file_names[-1]}" "$start_line" "$line" "$start_side" "$side"
 
                 > aux.txt
             fi
           done < reviews.txt
+        shell: bash
