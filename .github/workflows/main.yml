@@ -151,7 +151,7 @@ jobs:
                 start_side=$(echo "$parsed_values" | awk '{print $3}')
                 side=$(echo "$parsed_values" | awk '{print $4}')
 
-                node post-comments.js "$escaped_comments" "${{ github.event.pull_request.head.sha }}" "${file_names[-1]}" "$start_line" "$line" "$start_side" "$side"
+                node post-comments.mjs "$escaped_comments" "${{ github.event.pull_request.head.sha }}" "${file_names[-1]}" "$start_line" "$line" "$start_side" "$side"
 
                 > aux.txt
             fi
