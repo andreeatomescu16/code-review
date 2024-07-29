@@ -58,11 +58,6 @@ jobs:
           restore-keys: |
             llama3-model-
 
-      - name: Pull Llama3 Model
-        if: steps.cache-model.outputs.cache-hit != 'true'
-        run: |
-          ollama pull llama3
-
       - name: Fetch Base Branch
         run: git fetch origin main:main
 
