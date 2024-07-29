@@ -1,6 +1,6 @@
 name: GPT Code Review
 
- on:
+on:
 
    pull_request:
 
@@ -8,7 +8,7 @@ name: GPT Code Review
 
    workflow_dispatch:
 
- jobs:
+jobs:
 
    code_review:
 
