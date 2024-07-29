@@ -190,7 +190,7 @@ name: GPT Code Review
 
            GITHUB_EVENT_NUMBER: ${{ github.event.number }}
 
-           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+           GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
 
          run: |
 
