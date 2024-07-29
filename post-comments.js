@@ -1,7 +1,7 @@
-import fetch from node-fetch
-
 async function postCommentToGitHub(comment_body, commit_id, file_path, start_line, line, start_side, side) {
   const { Octokit } = await import('@octokit/core');
+
+  const fetch = require('node-fetch');
 
   try {
     const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN, request: { fetch }});
