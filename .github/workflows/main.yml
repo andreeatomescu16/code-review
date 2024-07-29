@@ -1,6 +1,6 @@
 name: GPT Code Review
 
- on:
+on:
 
    pull_request:
 
