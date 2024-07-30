@@ -28,6 +28,41 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Cache Ollama
+        id: cache-ollama
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.ollama
+            /usr/local/bin/ollama
+          key: ollama-${{ hashFiles('ollama-version.txt') }}-${{ hashFiles('model-name.txt') }}
+          restore-keys: |
+            ollama-
+
+      - name: Install Ollama
+        if: steps.cache-ollama.outputs.cache-hit != 'true'
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sudo -E sh
+
+      - name: Start Ollama Service
+        run: |
+          nohup ollama serve &
+          sleep 5
+          curl -i http://localhost:11434
+
+      - name: Cache Llama3 Model
+        id: cache-model
+        uses: actions/cache@v3
+        with:
+          path: ~/.ollama/models/llama3
+          key: llama3-model-${{ hashFiles('ollama-version.txt') }}-${{ hashFiles('model-name.txt') }}
+          restore-keys: |
+            llama3-model-
+
+      - name: Pull Llama3 Model
+        if: steps.cache-model.outputs.cache-hit != 'true'
+        run: |
+          ollama pull llama3
 
       - name: Fetch Base Branch
         run: git fetch origin main:main
@@ -71,14 +106,14 @@ jobs:
         run: echo "commit_id=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
       - name: Install Octokit
-        run: npm install @octokit/core node-fetch
+        run: npm install @octokit/core
 
       - name: Add Code Suggestions Comments
         env:
           COMMIT_ID: ${{ github.event.pull_request.head.sha }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_EVENT_NUMBER: ${{ github.event.number }}
-          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           commit_id=${{ env.commit_id }}
           file_names=()
@@ -116,7 +151,7 @@ jobs:
                 start_side=$(echo "$parsed_values" | awk '{print $3}')
                 side=$(echo "$parsed_values" | awk '{print $4}')
 
-                node post-comments.mjs "$escaped_comments" "${{ github.event.pull_request.head.sha }}" "${file_names[-1]}" "$start_line" "$line" "$start_side" "$side"
+                node post-comments.js "$escaped_comments" "${{ github.event.pull_request.head.sha }}" "${file_names[-1]}" "$start_line" "$line" "$start_side" "$side"
 
                 > aux.txt
             fi
