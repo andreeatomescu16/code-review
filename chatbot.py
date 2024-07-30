@@ -62,7 +62,7 @@ Your review:"""
             messages=[
                 {"role": "system", "content": system_message},
             ],
-            api_base="http://10.20.3.54:11434/api/generate"
+            api_base="http://10.20.3.54:11434"
         )
         return response
 
