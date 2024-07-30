@@ -58,11 +58,11 @@ Your review:"""
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(), retry=retry_if_exception_type(Exception), before_sleep=before_sleep_log(logger, logging.WARNING))
     def get_completion():
         response = completion(
-            model="ollama/llama3",
+            model="llama3.1-70b",
             messages=[
                 {"role": "system", "content": system_message},
             ],
-            api_base="http://localhost:11434"
+            api_base=http://10.20.3.54:11434"
         )
         return response
 
