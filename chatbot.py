@@ -59,7 +59,7 @@ Your review:"""
     def get_completion():
         response = completion(
             provider="ollama",
-            model="llama3",
+            model="llama3.1-70b",
             messages=[
                 {"role": "system", "content": system_message},
             ],
