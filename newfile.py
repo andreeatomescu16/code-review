@@ -4,8 +4,7 @@ lower = 10
 upper = 100
 
 for num in range(lower, upper + 1):
-   print("DOAMNE AJUTA")
-       for i in range(3, num):
+       for i in range(0, num):
            if (num % i) == 0:
                break
        else:
