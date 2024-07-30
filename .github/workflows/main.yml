@@ -46,8 +46,6 @@ jobs:
 
       - name: Start Ollama Service
         run: |
-          nohup ollama serve &
-          sleep 5
           curl -i http://10.20.3.54:11434
 
       - name: Cache Llama3 Model
