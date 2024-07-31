@@ -20,13 +20,13 @@ the initial and the final code and also the initial code. Please review these
 differences in the context of the initial code and identify any syntax or logical
 errors, suggest ways to refactor and improve code quality, enhance performance, 
 address security concerns, and align with best practices. Provide specific examples 
-for each area and limit your recommendations to three per category.
+for each area and limit your recommendations to three per category. If you don't have
+a relevant response with potential improvements to a category, please ignore the 
+entire category, do not mention it as it could be missleading.
 
 Use the following response format, and provide
 your feedback. Use bullet points for each response. The provided examples are for
 illustration purposes only and should not be repeated.
-
-If your suggestion for any of the following section starts with the word 'None', omit that section and go to the next one.
 
 
 **Syntax and logical errors (example)**:
