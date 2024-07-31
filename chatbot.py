@@ -26,7 +26,7 @@ Use the following response format, and provide
 your feedback. Use bullet points for each response. The provided examples are for
 illustration purposes only and should not be repeated.
 
-If your suggestion for any of the following section starts with "none", omit that section and go to the next one.
+If your suggestion for any of the following section starts with the word 'None', omit that section and go to the next one.
 
 
 **Syntax and logical errors (example)**:
