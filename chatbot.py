@@ -12,7 +12,7 @@ class CompletionError(Exception):
     """Custom exception for completion errors"""
     pass
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(), retry=retry_if_exception_type(Exception), before_sleep=before_sleep_log(logger, logging.WARNING))
-def generate_feedback(diff):
+def generate_feedback(diff, code_content):
     """Generate feedback using OpenAI GPT model."""
     system_message = f"""\
 I will provide for you the differences extracted with a github function between
