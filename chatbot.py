@@ -79,7 +79,7 @@ def review_code_diffs(diffs, file_contents):
         print("The differences are:\n", diff)
         if diff:
             code_content = file_contents.get(file_name, "")
-            answer = generate_feedback(diff, code_content, server_url)
+            answer = generate_feedback(diff, code_content)
             review_results.append(f"FILE: {file_name}\nDIFF: {diff}\nENDDIFF\nREVIEW: \n{answer}\nENDREVIEW")
 
     return "\n".join(review_results)
