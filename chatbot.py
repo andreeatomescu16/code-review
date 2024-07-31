@@ -4,15 +4,33 @@ from litellm import completion
 from dotenv import load_dotenv
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type, before_sleep_log
 import logging
+
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 load_dotenv()
+
+# Constants
+MODEL_NAME = os.getenv("MODEL_NAME", "llama3.1-70b")
+BASE_URL = os.getenv("BASE_URL", "https://96e0-5-2-197-51.ngrok-free.app/api/generate")
+
 class CompletionError(Exception):
     """Custom exception for completion errors"""
     pass
+
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(), retry=retry_if_exception_type(Exception), before_sleep=before_sleep_log(logger, logging.WARNING))
-def generate_feedback(diff):
+def get_completion(system_message: str):
+    response = completion(
+        model=MODEL_NAME,
+        messages=[
+            {"role": "system", "content": system_message},
+        ],
+        base_url=BASE_URL
+    )
+    return response
+
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(), retry=retry_if_exception_type(Exception), before_sleep=before_sleep_log(logger, logging.WARNING))
+def generate_feedback(diff: str) -> str:
     """Generate feedback using OpenAI GPT model."""
     system_message = f"""\
 I will provide for you the differences extracted with a github function between the initial and the final code. 
@@ -41,30 +59,22 @@ illustration purposes only and should not be repeated.
 Code changes:
 {diff}
 Your review:"""
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(), retry=retry_if_exception_type(Exception), before_sleep=before_sleep_log(logger, logging.WARNING))
-    def get_completion():
-        response = completion(
-            model="llama3.1-70b",
-            messages=[
-                {"role": "system", "content": system_message},
-            ],
-            base_url="https://96e0-5-2-197-51.ngrok-free.app/api/generate"
-        )
-        return response
 
     try:
-        response = get_completion()
+        response = get_completion(system_message)
         return response['choices'][0]['message']['content']
     except Exception as e:
         raise CompletionError(f"Failed to generate feedback after 3 retries: {str(e)}")
-def review_code_diffs(diffs):
+
+def review_code_diffs(diffs: dict) -> str:
     review_results = []
     for file_name, diff in diffs.items():
         print("The differences are:\n", diff)
         answer = generate_feedback(diff)
         review_results.append(f"FILE: {file_name}\nDIFF: {diff}\nENDDIFF\nREVIEW: {answer}\nENDREVIEW")
     return "\n".join(review_results)
-def get_file_diffs(file_list):
+
+def get_file_diffs(file_list: str) -> dict:
     diffs = {}
     for file_name in file_list.split():
         diff_file = f"diffs/{file_name}.diff"
@@ -73,6 +83,7 @@ def get_file_diffs(file_list):
                 diff = file.read()
             diffs[file_name] = diff
     return diffs
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python chatbot.py <file_names>")
