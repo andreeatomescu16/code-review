@@ -65,7 +65,7 @@ Your review:"""
             messages=[
                 {"role": "system", "content": system_message},
             ],
-            api_base="https://06fe-5-2-197-51.ngrok-free.app/api/generate"
+            api_base=os.getenv('MY_URL')
         )
         return response
 
