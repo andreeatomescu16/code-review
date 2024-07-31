@@ -44,11 +44,11 @@ Your review:"""
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(), retry=retry_if_exception_type(Exception), before_sleep=before_sleep_log(logger, logging.WARNING))
     def get_completion():
         response = completion(
-            model="AUTODETECT",
+            model="llama3.1-70b",
             messages=[
                 {"role": "system", "content": system_message},
             ],
-            api_base="https://96e0-5-2-197-51.ngrok-free.app/api/generate"
+            base_url="https://96e0-5-2-197-51.ngrok-free.app/api/generate"
         )
         return response
 
