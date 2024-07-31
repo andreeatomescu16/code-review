@@ -44,7 +44,7 @@ Your review:"""
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(), retry=retry_if_exception_type(Exception), before_sleep=before_sleep_log(logger, logging.WARNING))
     def get_completion():
         response = completion(
-            model="llama3-70b",
+            model="ollama/llama3-70b",
             messages=[
                 {"role": "system", "content": system_message},
             ],
