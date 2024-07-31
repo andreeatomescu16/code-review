@@ -23,7 +23,8 @@ address security concerns, and align with best practices. Provide specific examp
 for each area and limit your recommendations to three per category.
 
 Use the following response format, keeping the section headings as-is, and provide
-your feedback. If there is nothing to say in a section, don't mention it anymore. Use bullet points for each response. The provided examples are for
+your feedback. If you do not have any comments for one of the following section, you must omit it. For example, if the code does not have any 
+syntax or logical errors, you simply start with the next section, Code refactoring and quality. Use bullet points for each response. The provided examples are for
 illustration purposes only and should not be repeated.
 
 **Syntax and logical errors (example)**:
