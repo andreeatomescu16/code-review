@@ -23,8 +23,11 @@ address security concerns, and align with best practices. Provide specific examp
 for each area and limit your recommendations to three per category.
 
 Use the following response format, and provide
-your feedback. If you do not have any comments for one of the following section, you must omit it. Use bullet points for each response. The provided examples are for
+your feedback. Use bullet points for each response. The provided examples are for
 illustration purposes only and should not be repeated.
+
+If your suggestion for any of the following section starts with "none", omit that section and go to the next one.
+
 
 **Syntax and logical errors (example)**:
 - Incorrect indentation on line 12
