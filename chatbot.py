@@ -71,12 +71,17 @@ Your review:"""
         return response['choices'][0]['message']['content']
     except Exception as e:
         raise CompletionError(f"Failed to generate feedback after 3 retries: {str(e)}")
-def review_code_diffs(diffs):
+
+
+def review_code_diffs(diffs, file_contents):
     review_results = []
     for file_name, diff in diffs.items():
         print("The differences are:\n", diff)
-        answer = generate_feedback(diff)
-        review_results.append(f"FILE: {file_name}\nDIFF: {diff}\nENDDIFF\nREVIEW: {answer}\nENDREVIEW")
+        if diff:
+            code_content = file_contents.get(file_name, "")
+            answer = generate_feedback(diff, code_content, server_url)
+            review_results.append(f"FILE: {file_name}\nDIFF: {diff}\nENDDIFF\nREVIEW: \n{answer}\nENDREVIEW")
+
     return "\n".join(review_results)
 
 
