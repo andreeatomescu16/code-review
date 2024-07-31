@@ -15,31 +15,45 @@ class CompletionError(Exception):
 def generate_feedback(diff):
     """Generate feedback using OpenAI GPT model."""
     system_message = f"""\
-I will provide for you the differences extracted with a github function between the initial and the final code. 
-Please review the code below and identify any syntax or logical errors, suggest
-ways to refactor and improve code quality, enhance performance, address security
-concerns, and align with best practices. Provide specific examples for each area
-and limit your recommendations to three per category.
+I will provide for you the differences extracted with a github function between
+the initial and the final code and also the initial code. Please review these 
+differences in the context of the initial code and identify any syntax or logical
+errors, suggest ways to refactor and improve code quality, enhance performance, 
+address security concerns, and align with best practices. Provide specific examples 
+for each area and limit your recommendations to three per category.
+
 Use the following response format, keeping the section headings as-is, and provide
-your feedback. Use bullet points for each response. The provided examples are for
+your feedback. If there is nothing to say in a section, don't mention it anymore. Use bullet points for each response. The provided examples are for
 illustration purposes only and should not be repeated.
+
 **Syntax and logical errors (example)**:
 - Incorrect indentation on line 12
 - Missing closing parenthesis on line 23
+
 **Code refactoring and quality (example)**:
 - Replace multiple if-else statements with a switch case for readability
 - Extract repetitive code into separate functions
+
 **Performance optimization (example)**:
 - Use a more efficient sorting algorithm to reduce time complexity
 - Cache results of expensive operations for reuse
+
 **Security vulnerabilities (example)**:
 - Sanitize user input to prevent SQL injection attacks
 - Use prepared statements for database queries
+
 **Best practices (example)**:
 - Add meaningful comments and documentation to explain the code
 - Follow consistent naming conventions for variables and functions
+
 Code changes:
+
 {diff}
+
+Full code:
+
+{code_content}
+
 Your review:"""
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(), retry=retry_if_exception_type(Exception), before_sleep=before_sleep_log(logger, logging.WARNING))
     def get_completion():
@@ -64,6 +78,18 @@ def review_code_diffs(diffs):
         answer = generate_feedback(diff)
         review_results.append(f"FILE: {file_name}\nDIFF: {diff}\nENDDIFF\nREVIEW: {answer}\nENDREVIEW")
     return "\n".join(review_results)
+
+
+def get_file_contents(file_list):
+    contents = {}
+    for file_name in file_list.split():
+        if os.path.exists(file_name):
+            with open(file_name, 'r') as file:
+                content = file.read()
+            contents[file_name] = content
+    return contents
+ 
+
 def get_file_diffs(file_list):
     diffs = {}
     for file_name in file_list.split():
@@ -77,8 +103,10 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python chatbot.py <file_names>")
         sys.exit(1)
+
     files = sys.argv[1]
     file_diffs = get_file_diffs(files)
-    result = review_code_diffs(file_diffs)
+    file_contents = get_file_contents(files)
+    result = review_code_diffs(file_diffs, file_contents)
     with open('reviews.txt', 'w') as output_file:
         output_file.write(result)
