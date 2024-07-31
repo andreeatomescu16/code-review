@@ -48,7 +48,7 @@ Your review:"""
             messages=[
                 {"role": "system", "content": system_message},
             ],
-            base_url="https://96e0-5-2-197-51.ngrok-free.app/api/generate"
+            api_base="https://96e0-5-2-197-51.ngrok-free.app/api/generate"
         )
         return response
 
