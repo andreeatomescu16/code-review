@@ -32,7 +32,7 @@ jobs:
         if: ${{ always() }}
         env:
           MY_GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REPOSITORY: ${{ secrets.MY_GITHUB_REPO }}
         run: |
           echo "Running create_pr.py"
           python create_pr.py
