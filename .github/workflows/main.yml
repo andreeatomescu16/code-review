@@ -50,6 +50,8 @@ jobs:
             fi
           done
       - name: Run Python Script
+        env:
+          MY_URL: ${{ secrets.MY_SECRET_URL}}
         run: |
           changed_files="${{ steps.changed-files.outputs.all_changed_files }}"
           python3 chatbot.py "$changed_files"
