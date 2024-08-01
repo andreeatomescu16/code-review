@@ -18,7 +18,6 @@ REPO_NAME = "andreea-ghe/test"
 if not GITHUB_TOKEN or not REPO_NAME:
     raise ValueError("Missing GITHUB_TOKEN or GITHUB_REPOSITORY environment variable")
 
-# Initialize GitHub client
 g = Github(GITHUB_TOKEN)
 repo = g.get_repo(REPO_NAME)
 
