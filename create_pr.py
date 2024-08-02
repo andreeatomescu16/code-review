@@ -12,7 +12,7 @@ load_dotenv()
 
 # Get environment variables
 GITHUB_TOKEN = os.getenv("MY_GITHUB_TOKEN")
-REPO_NAME = "andreea-ghe/test"
+REPO_NAME = "andreeatomescu16/code-review"
 
 if not GITHUB_TOKEN or not REPO_NAME:
     raise ValueError("Missing GITHUB_TOKEN or GITHUB_REPOSITORY environment variable")
