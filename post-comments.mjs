@@ -3,7 +3,7 @@ import { Octokit } from '@octokit/core';
 async function postCommentToGitHub(comment_body, commit_id, file_path, start_line, line, start_side, side) {
   try {
     const { default: fetch } = await import('node-fetch');
-    const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN, request: { fetch }});
+    const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN, request: { fetch } });
 
     comment_body = comment_body.replace(/\\n/g, '\n').replace(/\\t\+/g, '    ');
 
@@ -14,31 +14,52 @@ async function postCommentToGitHub(comment_body, commit_id, file_path, start_lin
 
     console.log(comment_body);
 
+    // Fetch existing comments
+    const { data: existingComments } = await octokit.request('GET /repos/{owner}/{repo}/pulls/{pull_number}/comments', {
+      owner,
+      repo,
+      pull_number
+    });
+
+    // Check if the comment already exists
+    const isCommentExisting = existingComments.some(comment => 
+      comment.body === comment_body && 
+      comment.path === file_path && 
+      comment.position === parseInt(line) && 
+      comment.commit_id === commit_id
+    );
+
+    if (isCommentExisting) {
+      console.log('Comment already exists, skipping...');
+      return;
+    }
+
+    // Post new comment
     let response;
     if (start_line == line) {
       response = await octokit.request('POST /repos/{owner}/{repo}/pulls/{pull_number}/comments', {
-          owner,
-          repo,
-          pull_number,
-          commit_id,
-          path: file_path,
-          body: comment_body,
-          line: parseInt(line),
-          side
-        });
+        owner,
+        repo,
+        pull_number,
+        commit_id,
+        path: file_path,
+        body: comment_body,
+        line: parseInt(line),
+        side
+      });
     } else {
       response = await octokit.request('POST /repos/{owner}/{repo}/pulls/{pull_number}/comments', {
-          owner,
-          repo,
-          pull_number,
-          commit_id,
-          path: file_path,
-          body: comment_body,
-          start_line: parseInt(start_line),
-          line: parseInt(line),
-          start_side,
-          side
-        });
+        owner,
+        repo,
+        pull_number,
+        commit_id,
+        path: file_path,
+        body: comment_body,
+        start_line: parseInt(start_line),
+        line: parseInt(line),
+        start_side,
+        side
+      });
     }
 
     if (response.status !== 201) {
