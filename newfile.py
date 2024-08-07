@@ -1,10 +1,10 @@
 # Python program to display all the prime numbers within an interval
 
 lower = 10
-upper = 30
+upper = 40
 
 for num in range(lower, upper + 1):
-       for i in range(4, num):
+       for i in range(3, num:
            if (num % i) == 0:
                break
        else:

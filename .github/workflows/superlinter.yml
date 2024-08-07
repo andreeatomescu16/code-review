@@ -27,6 +27,7 @@ jobs:
         env:
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ secrets.MY_GITHUB_REPO }}
 
       - name: Run Push Event Script
         if: ${{ always() }}
